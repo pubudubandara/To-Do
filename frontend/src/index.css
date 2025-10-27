@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+/* Tailwind v4 theming: make custom colors available as utilities (e.g., bg-primary, bg-success) */
+@theme {
+	/* Primary brand color and shades */
+
+	--color-primary-500: #6E8CFB;
+	--color-primary: #6E8CFB; /* DEFAULT */
+
+	/* Success semantic color */
+	--color-success-500: #22C55E;
+	--color-success-600: #16A34A;
+	--color-success: #22C55E; /* DEFAULT */
+
+	/* Glassmorphism surfaces */
+	--color-surface: rgba(255, 255, 255, 0.20);
+	--color-surface-30: rgba(255, 255, 255, 0.30);
+	--color-surface-50: rgba(255, 255, 255, 0.50);
+
+	/* Light background palette */
+	--color-light-50: #ffffff;
+	--color-light-100: #f8fafc;
+	--color-light-200: #f1f5f9;
+	--color-light-300: #e2e8f0;
+}
+
+/* Minimal base to allow full-width Tailwind layouts */
+html, body, #root { height: 100%; }
+body { margin: 0; }
