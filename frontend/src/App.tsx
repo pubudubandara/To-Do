@@ -59,7 +59,7 @@ function App() {
 
       if (response.ok) {
         const created: Task = await response.json();
-        setTasks((prev) => [created, ...prev]);
+        setTasks((prev) => [created, ...prev].slice(0, 5));
         setTitle('');
         setDescription('');
         setError(null);
@@ -82,7 +82,6 @@ function App() {
   const completeTask = async (id: number) => {
     try {
       const prevTasks = [...tasks];
-      // Optimistic remove for smooth exit animation
       setTasks((prev) => prev.filter((t) => t.id !== id));
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 8000);
@@ -95,6 +94,7 @@ function App() {
       if (response.ok) {
         setError(null);
         toast.success('Task removed');
+          await fetchTasks();
       } else {
         const msg = await response.text();
         // rollback

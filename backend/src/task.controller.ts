@@ -3,11 +3,11 @@ import { pool } from './db';
 import { RowDataPacket } from 'mysql2';
 import { Task } from './task.model';
 
-// Get 5 most recent incomplete tasks
+// Get 5 most recent tasks
 export const getTasks = async (req: Request, res: Response) => {
   try {
     const [rows] = await pool.query<Task[] & RowDataPacket[]>(
-      'SELECT * FROM task WHERE is_completed = FALSE ORDER BY created_at DESC LIMIT 5'
+      'SELECT * FROM task ORDER BY created_at DESC LIMIT 5'
     );
     res.status(200).json(rows);
   } catch (error) {
@@ -42,26 +42,6 @@ export const addTask = async (req: Request, res: Response) => {
   }
 };
 
-// Mark a task as complete
-export const completeTask = async (req: Request, res: Response) => {
-  const { id } = req.params;
-  try {
-    const [result] = await pool.query(
-      'UPDATE task SET is_completed = TRUE WHERE id = ?',
-      [id]
-    );
-
-    if ((result as any).affectedRows === 0) {
-      return res.status(404).json({ message: 'Task not found' });
-    }
-
-    res.status(200).json({ message: 'Task marked as complete' });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Error completing task', error });
-  }
-};
-
 // Update a task (title/description)
 export const updateTask = async (req: Request, res: Response) => {
   const { id } = req.params;
@@ -73,12 +53,12 @@ export const updateTask = async (req: Request, res: Response) => {
 
   try {
     const [result] = await pool.query(
-      'UPDATE task SET title = ?, description = ? WHERE id = ? AND is_completed = FALSE',
+      'UPDATE task SET title = ?, description = ? WHERE id = ?',
       [title, description ?? null, id]
     );
 
     if ((result as any).affectedRows === 0) {
-      return res.status(404).json({ message: 'Task not found or already completed' });
+      return res.status(404).json({ message: 'Task not found' });
     }
 
     const [rows] = await pool.query<Task[] & RowDataPacket[]>(
