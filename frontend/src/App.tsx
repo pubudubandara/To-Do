@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Toaster, toast } from 'react-hot-toast';
+import { AnimatePresence, motion } from 'framer-motion';
 import type { Task } from './types';
 import Navbar from './components/Navbar';
 import ErrorBanner from './components/ErrorBanner';
@@ -57,9 +58,10 @@ function App() {
       clearTimeout(timeout);
 
       if (response.ok) {
+        const created: Task = await response.json();
+        setTasks((prev) => [created, ...prev]);
         setTitle('');
         setDescription('');
-        fetchTasks(); // Refresh tasks
         setError(null);
         toast.success('Task created');
       } else {
@@ -79,26 +81,30 @@ function App() {
 
   const completeTask = async (id: number) => {
     try {
+      const prevTasks = [...tasks];
+      // Optimistic remove for smooth exit animation
+      setTasks((prev) => prev.filter((t) => t.id !== id));
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 8000);
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/tasks/${id}/complete`, {
-        method: 'PUT',
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/tasks/${id}`, {
+        method: 'DELETE',
         signal: controller.signal,
       });
       clearTimeout(timeout);
 
       if (response.ok) {
-        fetchTasks(); // Refresh tasks
         setError(null);
-        toast.success('Task marked done');
+        toast.success('Task removed');
       } else {
         const msg = await response.text();
-        throw new Error(msg || 'Failed to complete task');
+        // rollback
+        setTasks(prevTasks);
+        throw new Error(msg || 'Failed to remove task');
       }
     } catch (error) {
       console.error('Error completing task:', error);
       setError('Unable to complete task. Please try again.');
-      toast.error('Failed to complete task');
+      toast.error('Failed to delete task');
     }
   };
 
@@ -130,12 +136,13 @@ function App() {
       });
       clearTimeout(timeout);
       if (response.ok) {
+        const updated: Task = await response.json();
+        setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
         toast.success('Task updated');
         setIsOpen(false);
         setEditingId(null);
         setTitle('');
         setDescription('');
-        fetchTasks();
       } else {
         const msg = await response.text();
         throw new Error(msg || 'Failed to update task');
@@ -180,78 +187,96 @@ function App() {
       </main>
 
       {/* Modal for creating a task */}
-      {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          {/* Dimmed overlay with blur for stronger glass effect */}
-          <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-md"
-            onClick={() => setIsOpen(false)}
-          />
-          <div className="relative z-10 w-full max-w-lg mx-auto p-6">
-            <div className="backdrop-blur-xl bg-surface-50 rounded-2xl p-6 shadow-2xl border border-white/40 ring-1 ring-white/20">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-bold text-primary-600">{editingId ? 'Edit Task' : 'Create Task'}</h3>
-                <button
-                  onClick={() => setIsOpen(false)}
-                  className="text-gray-500 hover:text-gray-700"
-                  aria-label="Close"
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            {/* Dimmed overlay with blur for stronger glass effect */}
+            <motion.div
+              className="absolute inset-0 bg-black/40 backdrop-blur-md"
+              onClick={() => setIsOpen(false)}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            />
+            <motion.div
+              className="relative z-10 w-full max-w-lg mx-auto p-6"
+              initial={{ opacity: 0, y: 16, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 8, scale: 0.98 }}
+              transition={{ duration: 0.18, ease: 'easeOut' }}
+            >
+              <div className="backdrop-blur-xl bg-surface-50 rounded-2xl p-6 shadow-2xl border border-white/40 ring-1 ring-white/20">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="flex-1 text-center text-xl font-bold text-primary-500">
+                    {editingId ? 'Edit Task' : 'Create Task'}
+                  </h3>
+                  <button
+                    onClick={() => setIsOpen(false)}
+                    className="text-gray-500 hover:text-gray-700"
+                    aria-label="Close"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <form
+                  onSubmit={async (e) => {
+                    if (editingId) {
+                      await updateTask(e);
+                    } else {
+                      await addTask(e);
+                    }
+                    setIsOpen(false);
+                  }}
+                  className="space-y-4"
                 >
-                  ✕
-                </button>
+                  <div>
+                    <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
+                      Title *
+                    </label>
+                    <input
+                      type="text"
+                      id="title"
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      className="w-full px-4 py-3 rounded-lg bg-white/50 backdrop-blur-sm border border-white/30 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      placeholder="Enter task title..."
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+                      Description
+                    </label>
+                    <textarea
+                      id="description"
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      rows={5}
+                      className="w-full px-4 py-3 rounded-lg bg-white/50 backdrop-blur-sm border border-white/30 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
+                      placeholder="Enter task description..."
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full bg-primary-500 hover:bg-primary-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                  >
+                    {editingId ? (loading ? 'Saving...' : 'Save Changes') : (loading ? 'Adding Task...' : 'Add Task')}
+                  </button>
+                </form>
               </div>
-
-              <form
-                onSubmit={async (e) => {
-                  if (editingId) {
-                    await updateTask(e);
-                  } else {
-                    await addTask(e);
-                  }
-                  setIsOpen(false);
-                }}
-                className="space-y-4"
-              >
-                <div>
-                  <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-                    Title *
-                  </label>
-                  <input
-                    type="text"
-                    id="title"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    className="w-full px-4 py-3 rounded-lg bg-white/50 backdrop-blur-sm border border-white/30 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                    placeholder="Enter task title..."
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-                    Description
-                  </label>
-                  <textarea
-                    id="description"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    rows={5}
-                    className="w-full px-4 py-3 rounded-lg bg-white/50 backdrop-blur-sm border border-white/30 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
-                    placeholder="Enter task description..."
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-primary hover:bg-primary-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-                >
-                  {editingId ? (loading ? 'Saving...' : 'Save Changes') : (loading ? 'Adding Task...' : 'Add Task')}
-                </button>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

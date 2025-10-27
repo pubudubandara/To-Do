@@ -4,8 +4,9 @@
 @theme {
 	/* Primary brand color and shades */
 
+  --color-primary-400: #8BA4FC;
 	--color-primary-500: #6E8CFB;
-	--color-primary: #6E8CFB; /* DEFAULT */
+  --color-primary-700: #3D56DA;
 
 	/* Success semantic color */
 	--color-success-500: #22C55E;

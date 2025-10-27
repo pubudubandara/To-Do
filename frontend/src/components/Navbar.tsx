@@ -9,7 +9,7 @@ export default function Navbar({ onAddClick }: Props) {
         <h1 className="text-xl sm:text-2xl font-bold">To-Do App</h1>
         <button
           onClick={onAddClick}
-          className="bg-white text-primary hover:bg-white/90 font-semibold py-2 px-4 rounded-lg shadow transition"
+          className="bg-white text-primary-500 hover:bg-white/90 font-semibold py-2 px-4 rounded-lg shadow transition"
         >
           + Add Task
         </button>

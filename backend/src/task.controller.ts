@@ -47,7 +47,7 @@ export const completeTask = async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
     const [result] = await pool.query(
-      'UPDATE task SET is_completed = TRUE, completed_at = NOW() WHERE id = ?',
+      'UPDATE task SET is_completed = TRUE WHERE id = ?',
       [id]
     );
 
@@ -89,5 +89,25 @@ export const updateTask = async (req: Request, res: Response) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Error updating task', error });
+  }
+};
+
+// Delete a task permanently
+export const deleteTask = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  try {
+    const [result] = await pool.query(
+      'DELETE FROM task WHERE id = ?',
+      [id]
+    );
+
+    if ((result as any).affectedRows === 0) {
+      return res.status(404).json({ message: 'Task not found' });
+    }
+
+    res.status(200).json({ message: 'Task deleted' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error deleting task', error });
   }
 };
