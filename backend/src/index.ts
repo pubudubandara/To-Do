@@ -5,7 +5,7 @@ import { taskRouter } from './task.routes';
 import { pool, ensureSchema } from './db'; // DB pool and schema bootstrap
 
 const app = express();
-const port = Number(process.env.PORT) || 5000;
+const port = Number(process.env.BACKEND_PORT) || 5000;
 
 // Middleware
 app.use(cors({ origin: process.env.CORS_ORIGIN || '*'}));

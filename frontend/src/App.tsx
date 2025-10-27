@@ -21,7 +21,7 @@ function App() {
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 8000);
-      const response = await fetch('/api/tasks', { signal: controller.signal });
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/tasks`, { signal: controller.signal });
       clearTimeout(timeout);
       if (!response.ok) {
         throw new Error(`Failed to fetch tasks: ${response.status}`);
@@ -46,7 +46,7 @@ function App() {
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 8000);
-      const response = await fetch('/api/tasks', {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/tasks`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -81,7 +81,7 @@ function App() {
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 8000);
-      const response = await fetch(`/api/tasks/${id}/complete`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/tasks/${id}/complete`, {
         method: 'PUT',
         signal: controller.signal,
       });
@@ -122,7 +122,7 @@ function App() {
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 8000);
-      const response = await fetch(`/api/tasks/${editingId}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/tasks/${editingId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title, description }),

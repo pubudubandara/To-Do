@@ -35,21 +35,7 @@ export async function ensureSchema() {
       title VARCHAR(255) NOT NULL,
       description TEXT,
       is_completed BOOLEAN DEFAULT FALSE,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      completed_at TIMESTAMP NULL DEFAULT NULL
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
   `);
-
-  // Step 3: In case the table already existed without the new columns, try to add them safely
-  try {
-    await pool.query(`
-      ALTER TABLE task
-      ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP NULL DEFAULT NULL
-    `);
-  } catch (e: any) {
-    // For MySQL versions without IF NOT EXISTS, ignore duplicate column errors
-    if (e && e.code !== 'ER_DUP_FIELDNAME') {
-      throw e;
-    }
-  }
 }
